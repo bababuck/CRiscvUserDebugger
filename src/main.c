@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "../include/child.h"
+#include "../include/debugger.h"
 #include "../include/logger.h"
 
 
@@ -21,6 +22,7 @@ int main(int argc, char** argv) {
   } else if (user_pid > 0) {
     // Debugger
     logger("debug_proc", "Debug process started");
+    launch_debugger(user_pid, argv[1]);
     logger("debug_proc", "Debug process completed");
   } else {
     perror("fork() failed");

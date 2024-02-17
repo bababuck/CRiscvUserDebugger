@@ -2,11 +2,13 @@
 #include <sstream>
 #include <string>
 #include <stdio.h>
+#include <unordered_map>
 #include <vector>
 
 #include <sys/types.h>
 #include <sys/ptrace.h>
 
+#include <../include/breakpoint.h>
 #include <../include/debugger.h>
 #include "../include/logger.h"
 
@@ -18,11 +20,13 @@ class debugger_t {
 private:
   int child_pid;
   std::string program_name;
+  std::unordered_map<addr_t, breakpoint_t> breakpoints;
 
   void execute(const std::string &command);
   void resume_child_process();
   void step_child_process();
   std::vector<std::string> parse_command(const std::string &line);
+  void add_breakpoint_at(addr_t addr);
 public:
   debugger_t(int child_pid, char *program_name);
   void run();
@@ -37,7 +41,7 @@ void launch_debugger(int child_pid, char *program_name) {
 
 }
 
-debugger_t::debugger_t(int child_pid, char *program_name): child_pid(child_pid), program_name(program_name) {
+debugger_t::debugger_t(int child_pid, char *program_name): child_pid(child_pid), program_name(program_name), breakpoints() {
   int status;
   logger("debug_proc", "Waiting for child to stop");
   if (waitpid(child_pid, &status, WUNTRACED) == -1)
@@ -53,10 +57,10 @@ void debugger_t::run() {
     std::getline(std::cin, command);
     execute(command);
     int status;
-    if (waitpid(child_pid, &status, 0) == -1)
+    /*    if (waitpid(child_pid, &status, 0) == -1)
       perror("waitpid() failed");
     else
-      break;
+    break;*/
   }
 }
 
@@ -78,6 +82,13 @@ void debugger_t::execute(const std::string &command_line) {
       step_child_process();
     } else {
       std::cerr << "No arguments expected with 'step'" << std::endl;
+    }
+  } else if (command == "break" || command == "b") {
+    if (argc == 2) {
+      addr_t addr = stoull(args[1], nullptr, 16);
+      add_breakpoint_at(addr);
+    } else {
+      std::cerr << "Expected one argument with 'break'" << std::endl;
     }
   } else {
     std::cout << "Unknown command" << std::endl;
@@ -110,4 +121,10 @@ void debugger_t::step_child_process(){
   int status;
   if (waitpid(child_pid, &status, 0) == -1)
     perror("waitpid() failed");
+}
+
+void debugger_t::add_breakpoint_at(addr_t addr){
+  breakpoint_t breakpoint(addr, child_pid);
+  breakpoint.enable();
+  breakpoints[addr] = breakpoint;
 }

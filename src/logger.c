@@ -19,4 +19,5 @@ void logger(const char* tag, const char* message) {
   time_t now;
   time(&now);
   fprintf(global_log, "%s [%s]: %s\n", ctime(&now), tag, message);
+  printf("%s [%s]: %s\n", ctime(&now), tag, message);
 }

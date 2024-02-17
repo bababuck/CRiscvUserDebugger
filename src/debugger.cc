@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <vector>
 
+#include <sys/types.h>
+#include <sys/ptrace.h>
+
 #include <../include/debugger.h>
 #include "../include/logger.h"
 
@@ -48,6 +51,11 @@ void debugger_t::run() {
   while (1) {
     std::getline(std::cin, command);
     execute(command);
+    int status;
+    if (waitpid(child_pid, &status, 0) == -1)
+      perror("waitpid() failed");
+    else
+      break;
   }
 }
 
@@ -57,8 +65,8 @@ void debugger_t::execute(const std::string &command_line) {
   int argc = args.size();
 
   if (command == "continue" || command == "c") {
-    logger("debug_proc", "Continue child program");
     if (argc == 1) {
+      logger("debug_proc", "Continue child program");
       resume_child_process();
     } else {
       std::cerr << "No arguments expected with 'continue'" << std::endl;
@@ -78,4 +86,11 @@ std::vector<std::string> debugger_t::parse_command(const std::string &line){
   return parsed;
 }
 
-void debugger_t::resume_child_process(){}
+void debugger_t::resume_child_process(){
+  ptrace(PT_CONTINUE, child_pid, (caddr_t) 1, 0);
+
+  // Wait until process continues
+  int status;
+  if (waitpid(child_pid, &status, 0) == -1)
+    perror("waitpid() failed");
+}

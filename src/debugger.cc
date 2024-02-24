@@ -21,6 +21,7 @@ private:
 
   void execute(const std::string &command);
   void resume_child_process();
+  void step_child_process();
   std::vector<std::string> parse_command(const std::string &line);
 public:
   debugger_t(int child_pid, char *program_name);
@@ -71,6 +72,13 @@ void debugger_t::execute(const std::string &command_line) {
     } else {
       std::cerr << "No arguments expected with 'continue'" << std::endl;
     }
+  } else if (command == "step" || command == "s") {
+    if (argc == 1) {
+      logger("debug_proc", "Step child program");
+      step_child_process();
+    } else {
+      std::cerr << "No arguments expected with 'step'" << std::endl;
+    }
   } else {
     std::cout << "Unknown command" << std::endl;
   }
@@ -90,6 +98,15 @@ void debugger_t::resume_child_process(){
   ptrace(PT_CONTINUE, child_pid, (caddr_t) 1, 0);
 
   // Wait until process continues
+  int status;
+  if (waitpid(child_pid, &status, 0) == -1)
+    perror("waitpid() failed");
+}
+
+void debugger_t::step_child_process(){
+  ptrace(PT_STEP, child_pid, (caddr_t) 1, 0);
+
+  // Wait until process steps
   int status;
   if (waitpid(child_pid, &status, 0) == -1)
     perror("waitpid() failed");

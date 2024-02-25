@@ -10,10 +10,11 @@
 #include "../include/logger.h"
 #include "../include/mach.h"
 
+breakpoint_id_t breakpoint_t::count = 0;
 
-breakpoint_t::breakpoint_t(const addr_t addr, const int child_pid): enabled(false), addr(addr), child_pid(child_pid) {}
+breakpoint_t::breakpoint_t(const addr_t addr, const int child_pid): enabled(false), addr(addr), child_pid(child_pid), id(count) {++count;}
 
-breakpoint_t::breakpoint_t(): enabled(false), addr(0), child_pid(0) {}
+breakpoint_t::breakpoint_t(): enabled(false), addr(0), child_pid(0), id(0) {}
 
 void breakpoint_t::enable() {
   read_mem(child_pid, saved_inst, /*bytes*/4, addr);

@@ -54,6 +54,7 @@ void debugger_t::run() {
 
   std::string command;
   while (1) {
+    printf("Stopped at 0x%lx > ", get_pc(child_pid));
     std::getline(std::cin, command);
     execute(command);
     int status;

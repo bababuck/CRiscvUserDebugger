@@ -27,6 +27,7 @@ private:
   void step_child_process();
   std::vector<std::string> parse_command(const std::string &line);
   void add_breakpoint_at(addr_t addr);
+  void list_breakpoints();
 public:
   debugger_t(int child_pid, char *program_name);
   void run();
@@ -91,6 +92,17 @@ void debugger_t::execute(const std::string &command_line) {
     } else {
       std::cerr << "Expected one argument with 'break'" << std::endl;
     }
+  } else if (command == "info" || command == "i") {
+    if (argc == 2) {
+      auto query = args[1];
+      if (query == "break" || query == "b") {
+        list_breakpoints();
+      } else {
+        std::cout << "Unknown command" << std::endl;
+      }
+    } else {
+      std::cerr << "Expected one argument with 'ifno'" << std::endl;
+    }
   } else {
     std::cout << "Unknown command" << std::endl;
   }
@@ -128,4 +140,12 @@ void debugger_t::add_breakpoint_at(addr_t addr){
   breakpoint_t breakpoint(addr, child_pid);
   breakpoint.enable();
   breakpoints[addr] = breakpoint;
+}
+
+void debugger_t::list_breakpoints() {
+  std::cout << "  Num    Type      Enb  Address\n";
+  for (auto breakpoint_pair : breakpoints) {
+    std::cout << breakpoint_pair.second.list_string() << "\n";
+  }
+  std::cout << std::endl;
 }

@@ -2,6 +2,8 @@
  * Handle enabling and disabling breakpoints.
  */
 
+#include <iomanip>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -40,4 +42,10 @@ void breakpoint_t::disable() {
   write_mem(child_pid, /*data*/saved_inst, /*bytes*/4, addr);
 
   enabled = false;
+}
+
+std::string breakpoint_t::list_string() {
+  std::stringstream ss;
+  ss << " " << std::setw(5) << id << "  breakpoint  " << (enabled ? "y" : "n") << "  0x" << std::setw(10) << addr;
+  return ss.str();
 }

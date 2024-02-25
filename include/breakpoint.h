@@ -5,6 +5,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string.h>
 
 #include "mach.h"
 
@@ -21,6 +22,7 @@ class breakpoint_t {
 
   void enable();
   void disable();
+  std::string list_string();
   bool enabled;
   breakpoint_id_t id;
  private:

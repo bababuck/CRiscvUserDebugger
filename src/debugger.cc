@@ -27,6 +27,7 @@ private:
   void step_child_process();
   std::vector<std::string> parse_command(const std::string &line);
   void add_breakpoint_at(addr_t addr);
+  void delete_breakpoint(breakpoint_id_t id);
   void list_breakpoints();
 public:
   debugger_t(int child_pid, char *program_name);
@@ -92,6 +93,13 @@ void debugger_t::execute(const std::string &command_line) {
     } else {
       std::cerr << "Expected one argument with 'break'" << std::endl;
     }
+  } else if (command == "del" || command == "d") {
+    if (argc == 2) {
+      breakpoint_id_t id = stoul(args[1], nullptr, 10);
+      delete_breakpoint(id);
+    } else {
+      std::cerr << "Expected one argument with 'del'" << std::endl;
+    }
   } else if (command == "info" || command == "i") {
     if (argc == 2) {
       auto query = args[1];
@@ -140,6 +148,20 @@ void debugger_t::add_breakpoint_at(addr_t addr){
   breakpoint_t breakpoint(addr, child_pid);
   breakpoint.enable();
   breakpoints[addr] = breakpoint;
+}
+
+void debugger_t::delete_breakpoint(breakpoint_id_t id){
+  for (auto it = breakpoints.begin(); it != breakpoints.end(); ++it) {
+    breakpoint_t breakpoint = it->second;
+    if (breakpoint.id == id) {
+      if (breakpoint.enabled)
+        breakpoint.disable();
+
+      breakpoints.erase(it);
+      return;
+    }
+  }
+  printf("Breakpoint not found with ID= %d\n", id);
 }
 
 void debugger_t::list_breakpoints() {

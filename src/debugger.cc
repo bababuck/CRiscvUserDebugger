@@ -143,6 +143,11 @@ void debugger_t::resume_child_process(){
   int status;
   if (waitpid(child_pid, &status, 0) == -1)
     perror("waitpid() failed");
+  if (WIFEXITED(status) || WIFSIGNALED(status)) {
+    logger("debug_proc", "Child program terminated.");
+    printf("Child Program Terminated\n");
+    exit(0);
+  }
 }
 
 void debugger_t::step_child_process(){

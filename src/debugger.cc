@@ -10,6 +10,7 @@
 
 #include <../include/breakpoint.h>
 #include <../include/debugger.h>
+#include "../include/arm.h"
 #include "../include/logger.h"
 
 
@@ -21,6 +22,8 @@ private:
   int child_pid;
   std::string program_name;
   std::unordered_map<addr_t, breakpoint_t> breakpoints;
+  uint8_t step_breakpoints_count = 0;
+  breakpoint_t step_breakpoints[2];
 
   void execute(const std::string &command);
   void resume_child_process();
@@ -56,6 +59,12 @@ void debugger_t::run() {
 
   std::string command;
   while (1) {
+    if (step_breakpoints_count) {
+      for (int i=0; i<step_breakpoints_count; ++i) {
+        step_breakpoints[i].disable();
+      }
+      step_breakpoints_count = 0;
+    }
     printf("Stopped at 0x%lx > ", get_pc(child_pid));
     std::getline(std::cin, command);
     execute(command);
@@ -136,12 +145,22 @@ void debugger_t::resume_child_process(){
 }
 
 void debugger_t::step_child_process(){
-  ptrace(PT_STEP, child_pid, (caddr_t) 1, 0);
+  addr_t *targets;
+  uint8_t target_count;
+  addr_t pc = get_pc(child_pid);
+  unsigned int instruction = fetch_instruction(pc, child_pid);
+  get_next_instructions(&target_count, &targets, instruction, pc, child_pid);
 
-  // Wait until process steps
-  int status;
-  if (waitpid(child_pid, &status, 0) == -1)
-    perror("waitpid() failed");
+  for (int i=0; i<target_count; ++i) {
+    // Check if targets in breakpoints already, then don't need to add them
+    if (breakpoints.count(targets[i]) == 0) {
+      breakpoint_t breakpoint(targets[i], child_pid);
+      breakpoint.enable();
+      step_breakpoints[step_breakpoints_count] = breakpoint;
+      ++step_breakpoints_count;
+    }
+  }
+  resume_child_process();
 }
 
 void debugger_t::add_breakpoint_at(addr_t addr){

@@ -65,7 +65,8 @@ void debugger_t::run() {
       }
       step_breakpoints_count = 0;
     }
-    printf("Stopped at 0x%lx > ", get_pc(child_pid));
+    pc_t pc = get_pc(child_pid);
+    printf("Stopped at 0x%lx: 0x%x > ", pc, fetch_instruction(pc, child_pid));
     std::getline(std::cin, command);
     execute(command);
     int status;

@@ -1,6 +1,8 @@
 #include <string>
 
 #include <../include/debugger.h>
+#include "../include/logger.h"
+#include "../include/exit_codes.h"
 
 
 /**
@@ -25,6 +27,14 @@ void launch_debugger(int child_pid, char *program_name) {
 
 }
 
-debugger_t::debugger_t(int child_pid, char *program_name): child_pid(child_pid), program_name(program_name) {}
+debugger_t::debugger_t(int child_pid, char *program_name): child_pid(child_pid), program_name(program_name) {
+  int status;
+  logger("debug_proc", "Waiting for child to stop");
+  if (waitpid(child_pid, &status, WUNTRACED) == -1) {
+    perror("waitpid() failed");
+    exit(DBG_SYSCALL_FAILURE);
+  }
+  logger("debug_proc", "Child stopped");
+}
 
 void debugger_t::run() {}
